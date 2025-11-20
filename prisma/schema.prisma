@@ -1,0 +1,255 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model User {
+  id         Int       @id(map: "id_primt") @default(autoincrement())
+  name       String    @db.VarChar(250)
+  email      String    @db.VarChar(50)
+  password   String    @db.VarChar(250)
+  created_at DateTime? @db.DateTime
+  updated_at DateTime? @db.DateTime
+  phone      String?   @db.VarChar(12)
+  department Int?      @default(0, map: "DF__users__departmen__5BE2A6F2")
+  region     Int?      @default(0, map: "DF__users__region__5CD6CB2B")
+  status     String?   @db.VarChar(10)
+
+  @@map("users")
+}
+
+model Session {
+  id           Int       @id(map: "PK__sessions__3213E83F883A8454") @default(autoincrement())
+  token        String    @unique(map: "UQ__sessions__CA90DA7A955476F2") @db.NVarChar(255)
+  user_id      Int
+  expires_at   DateTime
+  created_at   DateTime? @default(now(), map: "DF__sessions__create__5070F446")
+  updated_at   DateTime? @default(now(), map: "DF__sessions__update__5165187F")
+  last_used_at DateTime? @default(now(), map: "DF__sessions__last_u__52593CB8")
+
+  @@index([expires_at], map: "idx_expires_at")
+  @@index([token], map: "idx_token")
+  @@index([user_id], map: "idx_user_id")
+  @@map("sessions")
+}
+
+model regions {
+  id         Int       @id(map: "PK__regions__3213E83F4AE106F9") @default(autoincrement())
+  name       String    @db.VarChar(250)
+  label      String    @db.VarChar(250)
+  status     String    @db.VarChar(50)
+  created_by Int
+  created_at DateTime? @default(now(), map: "DF__regions__created__5535A963") @db.DateTime
+  updated_at DateTime? @db.DateTime
+}
+
+model Setting {
+  id            Int       @id(map: "PK__settings__3213E83FADBA6169") @default(autoincrement())
+  name          String    @db.VarChar(250)
+  label         String    @db.VarChar(250)
+  status        String    @db.VarChar(50)
+  dropdown_type String    @db.VarChar(50)
+  created_by    Int
+  created_at    DateTime? @default(now(), map: "DF__settings__create__5812160E") @db.DateTime
+  updated_at    DateTime? @db.DateTime
+
+  @@map("settings")
+}
+
+model permissions {
+  id         Int                      @id(map: "PK__permissi__3213E83FBEFE8042") @default(autoincrement())
+  name       String                   @db.VarChar(50)
+  created_by Int
+  created_at Unsupported("timestamp")
+  updated_a  DateTime?                @db.DateTime
+}
+
+model role_has_permissons {
+  id            Int                      @id(map: "PK__role_has__3213E83F36A44D58") @default(autoincrement())
+  role_id       Int
+  permission_id Int
+  created_at    Unsupported("timestamp")
+  updated_a     DateTime?                @db.DateTime
+}
+
+model roles {
+  id         Int                      @id(map: "PK__roles__3213E83FF603C99C") @default(autoincrement())
+  name       String                   @db.VarChar(50)
+  status     String                   @db.VarChar(50)
+  created_by Int
+  created_at Unsupported("timestamp")
+  updated_a  DateTime?                @db.DateTime
+
+  @@map("roles")
+}
+
+model UserHasRole {
+  id         Int                      @id(map: "PK__user_has__3213E83F959C8A7D") @default(autoincrement())
+  user_id    Int
+  role_id    Int
+  created_at Unsupported("timestamp")
+  updated_a  DateTime?                @db.DateTime
+
+  @@map("user_has_roles")
+}
+
+model foreigners {
+  id                       Int       @id(map: "PK__foreigne__3213E83F7810E674") @default(autoincrement())
+  first_name               String    @db.VarChar(250)
+  last_name                String    @db.VarChar(250)
+  mother_name              String    @db.VarChar(500)
+  dob                      DateTime  @db.Date
+  gender                   String    @db.VarChar(10)
+  nationality              Int
+  country_of_origin        Int
+  marital_status           String?   @db.VarChar(500)
+  occupation               Int
+  number                   String    @db.VarChar(252)
+  email                    String?   @db.VarChar(255)
+  current_address          String?   @db.VarChar(1000)
+  fullname_somaliland      String?   @db.VarChar(250)
+  relationship_somaliland  String?   @db.VarChar(250)
+  contactnumber_somaliland String?   @db.VarChar(250)
+  address_somaliland       String?   @db.VarChar(250)
+  fullname_other           String?   @db.VarChar(250)
+  relationship_other       String?   @db.VarChar(250)
+  contactnumber_other      String?   @db.VarChar(250)
+  address_other            String?   @db.VarChar(250)
+  sponser_id               Int
+  entry_date               DateTime  @db.Date
+  entry_point              String    @db.VarChar(250)
+  purpose                  String    @db.VarChar(500)
+  type_status              String    @db.VarChar(500)
+  image                    String    @db.VarChar(1500)
+  created_by               Int
+  created_at               DateTime? @db.DateTime
+  updated_at               DateTime? @db.DateTime
+  registration_id          String?   @db.VarChar(500)
+}
+
+model sponsor_documents {
+  id           Int       @id(map: "PK__sponsor___3213E83F5E621E8E") @default(autoincrement())
+  sponsor_id   Int
+  file_name    String    @db.NVarChar(255)
+  file_path    String    @db.NVarChar(500)
+  file_size_kb Int
+  file_type    String    @db.NVarChar(50)
+  uploaded_at  DateTime? @default(dbgenerated("getutcdate()"), map: "DF__sponsor_d__uploa__1AD3FDA4")
+  type         String?   @db.VarChar(250)
+  sponsors     sponsors  @relation(fields: [sponsor_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_sponsor_documents_sponsors")
+}
+
+model sponsors {
+  id                           Int                 @id(map: "PK__sponsors__3213E83F2AED748E") @default(autoincrement())
+  sponsor_name                 String              @db.NVarChar(255)
+  national_id_number           String              @db.NVarChar(100)
+  sponsor_type                 String              @db.NVarChar(50)
+  email_address                String              @db.NVarChar(255)
+  primary_phone_number         String              @db.NVarChar(50)
+  emergency_contact_number     String              @db.NVarChar(50)
+  complete_address             String              @db.NVarChar(Max)
+  region                       String              @db.NVarChar(100)
+  maximum_sponsorship_capacity Int                 @default(5, map: "DF__sponsors__maximu__160F4887")
+  created_at                   DateTime?           @default(dbgenerated("getutcdate()"), map: "DF__sponsors__create__17036CC0")
+  updated_at                   DateTime?           @default(dbgenerated("getutcdate()"), map: "DF__sponsors__update__17F790F9")
+  company_name                 String?             @db.VarChar(500)
+  license_number               String?             @db.VarChar(500)
+  license_type                 String?             @db.VarChar(500)
+  license_ministry             String?             @db.VarChar(500)
+  status                       String              @default("active", map: "DF__sponsors__status__2739D489") @db.VarChar(50)
+  responsibility_score         Int                 @default(0, map: "DF__sponsors__respon__282DF8C2")
+  sponsor_documents            sponsor_documents[]
+}
+
+model foreigner_documents {
+  id         Int    @id(map: "PK__foreigne__3213E83F5A629819") @default(autoincrement())
+  foreign_id Int
+  type_id    Int
+  file_name  String @db.VarChar(2000)
+}
+
+model application_documents {
+  id             Int    @id(map: "PK__applicat__3213E83F8F59B6CC") @default(autoincrement())
+  application_id Int
+  file_name      String @db.VarChar(500)
+}
+
+model applications {
+  id               Int       @id(map: "PK__applicat__3213E83F82C2BC76") @default(autoincrement())
+  foreign_id       Int
+  application_type String    @db.VarChar(50)
+  document_type    String    @db.VarChar(50)
+  expiry_date      DateTime  @db.Date
+  note             String?   @db.VarChar(5000)
+  created_by       Int
+  status           String?   @default("Pending", map: "DF__applicati__statu__3587F3E0") @db.VarChar(50)
+  created_at       DateTime? @db.DateTime
+  updated_at       DateTime? @db.DateTime
+  is_paid          Int?      @default(0, map: "DF__applicati__is_pa__3A4CA8FD")
+  amount           String    @default("0", map: "DF__applicati__amoun__3D2915A8") @db.VarChar(1000)
+}
+
+model application_statuses {
+  id             Int       @id(map: "PK__applicat__3213E83FCB3C2464") @default(autoincrement())
+  application_id Int
+  status         String    @db.VarChar(50)
+  created_by     Int
+  created_at     DateTime? @db.DateTime
+}
+
+model payments {
+  id              Int       @id(map: "PK__payments__3213E83FB030AB1E") @default(autoincrement())
+  application_id  Int
+  receipt_number  String    @db.VarChar(250)
+  payment_date    DateTime? @db.Date
+  payment_type    String    @db.VarChar(250)
+  payment_method  String    @db.VarChar(250)
+  amount          String    @db.VarChar(1000)
+  currency        String    @db.VarChar(1000)
+  paid_by         String    @db.VarChar(1000)
+  account_sent_to String?   @db.VarChar(1000)
+  bank_name       String?   @db.VarChar(1000)
+  transcion_id    String?   @db.VarChar(1000)
+  notes           String?   @db.VarChar(1000)
+  created_by      Int
+  created_at      DateTime? @db.DateTime
+}
+
+model expense_categories {
+  id          Int       @id(map: "PK__expense___3213E83FBC6ECDC0") @default(autoincrement())
+  name        String    @db.VarChar(500)
+  description String?   @db.VarChar(1000)
+  status      String    @db.VarChar(50)
+  created_at  DateTime? @db.DateTime
+}
+
+model expense_subcategories {
+  id                  Int       @id(map: "PK__expense___3213E83F4EEE4284") @default(autoincrement())
+  expense_category_id Int
+  name                String    @db.VarChar(500)
+  status              String    @db.VarChar(50)
+  description         String?   @db.VarChar(500)
+  created_at          DateTime? @db.DateTime
+}
+
+model withdrawals {
+  id                     Int       @id(map: "PK__withdraw__3213E83F48869820") @default(autoincrement())
+  amount                 Float     @db.Money
+  priority               String    @db.VarChar(250)
+  expense_category       Int
+  expense_sub_category   Int
+  requested_by           String    @db.VarChar(500)
+  department_id          Int
+  description            String?   @db.VarChar(1000)
+  business_justification String?   @db.VarChar(1000)
+  created_by             Int
+  created_at             DateTime? @db.DateTime
+  updated_at             DateTime? @db.DateTime
+  status                 String?   @default("pending", map: "DF__withdrawa__statu__58D1301D") @db.VarChar(50)
+  reference              String?   @db.VarChar(250)
+}

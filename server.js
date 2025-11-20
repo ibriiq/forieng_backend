@@ -1,39 +1,38 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const LoginController = require('./Controllers/LoginController');
+import express from 'express';
+import router from './routes.js';
+import userInfo from './middleware/userInfo.js';
+import cors from 'cors';
+import cookieParser from 'cookie-parser'; // Import cookie-parser
 
-const prisma = new PrismaClient();
 const app = express();
+
+// Configure CORS options
+const corsOptions = {
+  origin: 'http://localhost:8080', // Allow only your React dev server
+  credentials: true, // Important if you're sending cookies or need credentials
+  // Add other options if needed, like allowed methods or headers
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Example: specify allowed methods
+  // allowedHeaders: ['Content-Type', 'Authorization'], // Example: specify allowed headers
+  credentials: true, // **CRITICAL**: Allows cookies to be sent
+};
+
+app.use(cors(corsOptions));
+
 const PORT = process.env.PORT || 3000;
 const host = process.env.HOST || 'localhost';
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Example route: Get all users
-app.get('/users', async (req, res) => {
-  try {
-    const users = await prisma.user.findMany();
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+app.use(cookieParser());
+app.use(userInfo);
 
-// Example route: Create a user
-app.post('/users', async (req, res) => {
-  const { email, name } = req.body;
-  try {
-    const user = await prisma.user.create({
-      data: { email, name },
-    });
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+app.use('/api', router);
 
-// Auth route: Login and generate JWT via controller
-app.post('/login', LoginController.login);
+
+
+
+
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
