@@ -203,6 +203,7 @@ model application_statuses {
   status         String    @db.VarChar(50)
   created_by     Int
   created_at     DateTime? @db.DateTime
+  reject_reason  String?   @db.VarChar(1000)
 }
 
 model payments {

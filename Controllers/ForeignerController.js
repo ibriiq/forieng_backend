@@ -503,8 +503,8 @@ const getApplication = async (req, res) => {
         concat('base_url', foreigners.image) as photoUrl
         FROM applications
         JOIN foreigners ON applications.foreign_id = foreigners.id
-        join sponsors on foreigners.sponser_id = sponsors.id
-        join settings on foreigners.nationality = settings.id and settings.dropdown_type = 'nationalities'
+        left join sponsors on foreigners.sponser_id = sponsors.id
+        left join settings on foreigners.nationality = settings.id and settings.dropdown_type = 'nationalities'
         order by applications.created_at desc
     `;
 
@@ -533,8 +533,8 @@ const ApproveApplication = async (req, res) => {
       });
 
       await tx.$queryRaw`
-        INSERT INTO application_statuses (application_id, status, created_by, created_at)
-        VALUES (${app.id}, '${req.body.status}', ${req.user.id}, ${new Date()})
+        INSERT INTO application_statuses (application_id, status, created_by,reject_reason, created_at)
+        VALUES (${app.id}, '${req.body.status}', ${req.user.id}, ${req.body.rejection_reason || ""}, ${new Date()})
       `;
 
       return app;
