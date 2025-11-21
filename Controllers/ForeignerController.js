@@ -458,7 +458,7 @@ const applicationForeigner = async (req, res) => {
           application_type: application_type,
           document_type: document_type,
           note: purpose,
-          expiry_date: new Date(),
+          expiry_date: new Date(expiry_date),
           status: status || "Pending",
           created_by: parseInt(req.user.id),
           created_at: new Date(),
