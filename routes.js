@@ -21,8 +21,11 @@ import { create as createSponsor,
   index as indexSponsor, 
   getSingle as getSingleSponsor, 
   updateStatus as updateStatusSponsor,
-  destroy as destroySponsor
+  destroy as destroySponsor,
+  getSponsorDocuments,
+  getSponsorSponsoredBy
 } from './Controllers/SponsorController.js';
+
 import { 
   create as createExpenseCategory, 
   index as indexExpenseCategory, 
@@ -65,6 +68,14 @@ import {
   setPermissions as setRolePermissions,
 } from './Controllers/RolesController.js';
 
+import {
+  create as createCountryOfOrigin,
+  index as indexCountryOfOrigin,
+  getSingle as getSingleCountryOfOrigin,
+  destroy as destroyCountryOfOrigin,
+  getCountryOfOriginById
+} from './Controllers/CountryOfOriginController.js';
+
 
 import {
   analytics,
@@ -72,7 +83,8 @@ import {
   getRegistrationTrends,
   getNationalityDistribution,
   getRecentAlerts,
-  getWeeklyIncidentTrends
+  getWeeklyIncidentTrends,
+  appliction_trends
 } from './Controllers/DashboardController.js';
 
 
@@ -151,6 +163,9 @@ router.post('/sponsors/', indexSponsor);
 router.post('/sponsors/getSingle', getSingleSponsor);
 router.post('/sponsors/updateStatus', updateStatusSponsor);
 router.post('/sponsors/destroy', destroySponsor);
+router.post('/sponsors/getDocuments', getSponsorDocuments);
+router.post('/sponsors/sponseredby', getSponsorSponsoredBy);
+
 
 
 
@@ -216,10 +231,20 @@ router.post('/roles/setPermissions', setRolePermissions);
 
 // Dashboard routes begin here
 router.post('/dashboard/analytics', analytics);
-router.post('/dashboard/key-metrics', getKeyMetrics);
+router.post('/dashboard/appliction_trends', appliction_trends);
+router.post('/dashboard/getKeyMetrics', getKeyMetrics);
 router.post('/dashboard/getRegistrationTrends', getRegistrationTrends);
 router.post('/dashboard/getNationalityDistribution', getNationalityDistribution);
 router.post('/dashboard/recent-alerts', getRecentAlerts);
 router.post('/dashboard/weekly-incident-trends', getWeeklyIncidentTrends);
+
+// Country of Origin routes begin here
+router.post('/country-of-origin/', indexCountryOfOrigin);
+router.post('/country-of-origin/create', createCountryOfOrigin);
+router.post('/country-of-origin/getSingle', getSingleCountryOfOrigin);
+router.post('/country-of-origin/destroy', destroyCountryOfOrigin);
+router.post('/country-of-origin/getById', getCountryOfOriginById);
+
+
 
 export default router;

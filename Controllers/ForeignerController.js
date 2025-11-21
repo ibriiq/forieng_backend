@@ -311,6 +311,7 @@ const create = async (req, res) => {
             created_at: new Date(),
             updated_at: new Date(),
             registration_id: "FRN-".concat(formattedDate).concat("-").concat(await tx.foreigners.count() + 1),
+            status: 'Registered'
           },
         });
 

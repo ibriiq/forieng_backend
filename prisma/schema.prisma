@@ -131,6 +131,7 @@ model foreigners {
   updated_at               DateTime? @db.DateTime
   registration_id          String?   @db.VarChar(500)
   unique_id                String?   @db.VarChar(150)
+  status                   String?   @default("Registered", map: "DF__foreigner__statu__756D6ECB") @db.VarChar(50)
 }
 
 model sponsor_documents {
@@ -262,4 +263,14 @@ model document_types {
   validity   Int
   created_by Int
   created_at DateTime? @db.DateTime
+}
+
+model country_of_origins {
+  id             Int       @id(map: "PK__country___3213E83F95B297F6") @default(autoincrement())
+  name           String    @db.VarChar(500)
+  nationality_id Int
+  description    String?   @db.VarChar(500)
+  status         String?   @db.VarChar(50)
+  created_by     Int
+  created_at     DateTime? @db.DateTime
 }

@@ -28,6 +28,7 @@ const buildDocumentPayload = (files = []) =>
         filePath: normalizedPath,
         fileSizeKb: Math.max(1, Math.ceil(((file.size ?? 1) || 1) / 1024)),
         fileType: detectedMime,
+        fieldname: file.fieldname,
       };
     })
     .filter((doc) => doc.filePath);
@@ -56,6 +57,7 @@ const sponsorSchema = Joi.object({
         filePath: Joi.string().trim().required(),
         fileSizeKb: Joi.number().integer().positive().required(),
         fileType: Joi.string().trim().required(),
+        fieldname: Joi.string().trim().required(),
       })
     )
     .default([]),
@@ -100,6 +102,9 @@ const create = async (req, res) => {
     };
     const documents = value.documents ?? [];
 
+
+    console.log(documents);
+
     if (req.body.id) {
 
       const createdSponsor = await prisma.$transaction(async (tx) => {
@@ -109,7 +114,7 @@ const create = async (req, res) => {
         });
 
         if (documents.length) {
-          await tx.sponsor_documents.where({where: {sponsor_id: parseInt(req.body.id)}}).deleteMany();
+          await tx.sponsor_documents.deleteMany({ where: { sponsor_id: parseInt(req.body.id) } });
           await tx.sponsor_documents.createMany({
             data: documents.map((doc) => ({
               sponsor_id: sponsor.id,
@@ -117,6 +122,7 @@ const create = async (req, res) => {
               file_path: doc.filePath,
               file_size_kb: doc.fileSizeKb,
               file_type: doc.fileType,
+              type: doc.fieldname,
             })),
           });
         }
@@ -140,6 +146,7 @@ const create = async (req, res) => {
               file_path: doc.filePath,
               file_size_kb: doc.fileSizeKb,
               file_type: doc.fileType,
+              type: doc.fieldname,
             })),
           });
         }
@@ -159,7 +166,32 @@ const create = async (req, res) => {
 
 const index = async (req, res) => {
   try {
-    const sponsors = await prisma.sponsors.findMany();
+    const sponsors = await prisma.$queryRaw`
+     SELECT 
+    sponsors.*, 
+    COUNT(foreigners.id) AS sponsored_count
+FROM sponsors
+LEFT JOIN foreigners ON sponsors.id = foreigners.sponser_id
+GROUP BY 
+    sponsors.id,
+    sponsors.sponsor_name,
+    sponsors.national_id_number,
+    sponsors.sponsor_type,
+    sponsors.email_address,
+    sponsors.primary_phone_number,
+    sponsors.emergency_contact_number,
+    sponsors.complete_address,
+    sponsors.region,
+    sponsors.maximum_sponsorship_capacity,
+    sponsors.created_at,
+    sponsors.updated_at,
+    sponsors.company_name,
+    sponsors.license_number,
+    sponsors.license_type,
+    sponsors.license_ministry,
+    sponsors.status,
+    sponsors.responsibility_score
+    `;
     return res.status(200).json(sponsors);
   } catch (error) {
     console.error("Error getting sponsors:", error);
@@ -210,6 +242,78 @@ const destroy = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
+
+export const getSponsorDocuments = async (req, res) => {
+  try {
+    const { sponsor_id } = req.body;
+
+    const host = process.env.HOST || 'localhost';
+    const port = process.env.PORT || 3000;
+    const baseUrl = `http://${host}:${port}`;
+
+    const documents = await prisma.$queryRaw`
+      SELECT sponsor_documents.*,REPLACE(REPLACE(sponsor_documents.type, '[', ''), ']', '') AS type
+      FROM sponsor_documents
+      where sponsor_id = ${sponsor_id}
+    `;
+
+    const transformedDocuments = documents.map(doc => ({
+      ...doc,
+      file_path: `${baseUrl}/${doc.file_path}`
+    }));
+
+
+    return res.status(200).json(transformedDocuments);
+
+  } catch (error) {
+    console.error("Error getting sponsor documents:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+export const getSponsorSponsoredBy = async (req, res) => {
+  try {
+    const { sponsor_id } = req.body;
+    const sponsoredBy = await prisma.$queryRaw`
+      SELECT sponsors.id,concat(foreigners.first_name, ' ', foreigners.last_name) as fullName, foreigners.registration_id, settings.name as nationality,
+      foreigners.gender,occupation.name as occupation,
+    DATEDIFF(YEAR, CAST(foreigners.dob AS DATE), GETDATE()) AS age,
+    foreigners.created_at
+
+      
+      
+      FROM foreigners
+      join sponsors on foreigners.sponser_id = sponsors.id
+      join settings on foreigners.nationality = settings.id and settings.dropdown_type = 'nationalities'
+      join settings as occupation on foreigners.occupation = occupation.id and occupation.dropdown_type = 'occupations'
+      where foreigners.sponser_id = ${parseInt(sponsor_id)}
+    `;
+
+    // {
+    //   id: "F001",
+    //   fullName: "Ahmed Hassan Ali",
+    //   nationality: "Ethiopian",
+    //   passportNumber: "ET1234567",
+    //   status: "Active",
+    //   registrationDate: "2023-07-15",
+    //   expiryDate: "2024-07-15",
+    //   sponsorId: "1",
+    //   occupation: "Construction Worker",
+    //   age: 28,
+    //   gender: "Male",
+    // },
+
+
+    return res.status(200).json(sponsoredBy);
+  } catch (error) {
+    console.error("Error getting sponsor sponsored by:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 
 
 

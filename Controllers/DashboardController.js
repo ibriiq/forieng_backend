@@ -11,13 +11,33 @@ const analytics = async (req, res) => {
             SELECT 0 as total_foreigners, 0 as total_active_applications, count(*) as total_pending_applications FROM applications where status = 'Pending'
     )z
         `;
-        return res.status(200).json(analytics);
+        return res.status(200).json(analytics[0] || {});
     } catch (error) {
         console.error("Error fetching analytics:", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 };
 
+
+
+
+const appliction_trends = async (req, res) => {
+    try {
+        const appliction_analytics = await prisma.$queryRaw`
+                    SELECT 
+                        FORMAT(created_at, 'yyyy-MM') AS month,
+                        COUNT(CASE WHEN application_type = 'new' THEN 1 END) AS new_applications,
+                        COUNT(CASE WHEN application_type = 'renewal' THEN 1 END) AS renewal_applications
+                    FROM applications
+                    GROUP BY FORMAT(created_at, 'yyyy-MM')
+                    ORDER BY month;
+        `;
+        return res.status(200).json(appliction_analytics);
+    } catch (error) {
+        console.error("Error fetching appliction trends:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
 // Get key metrics for dashboard cards
 const getKeyMetrics = async (req, res) => {
     try {
@@ -78,7 +98,7 @@ const getKeyMetrics = async (req, res) => {
 const getRegistrationTrends = async (req, res) => {
     try {
         const currentYear = new Date().getFullYear();
-        
+
         // Get monthly registration data for current year
         const registrationData = await prisma.$queryRaw`
             SELECT 
@@ -110,7 +130,7 @@ const getRegistrationTrends = async (req, res) => {
             const monthNumber = index + 1;
             const registration = registrationData.find(r => r.month === monthNumber);
             const deportation = 0;
-            
+
             return {
                 month: monthName,
                 registrations: registration ? parseInt(registration.registrations) : 0,
@@ -232,7 +252,7 @@ const getRecentAlerts = async (req, res) => {
 
         // Sort by timestamp (most recent first) and limit to 10
         alerts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        
+
         // Format timestamps to show relative time
         const formattedAlerts = alerts.slice(0, 10).map(alert => {
             const timeAgo = getTimeAgo(alert.timestamp);
@@ -288,30 +308,31 @@ const getWeeklyIncidentTrends = async (req, res) => {
 // Helper function to calculate time ago
 const getTimeAgo = (date) => {
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-    
+
     if (seconds < 60) {
         return `${seconds} seconds ago`;
     }
-    
+
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) {
         return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`;
     }
-    
+
     const hours = Math.floor(minutes / 60);
     if (hours < 24) {
         return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
     }
-    
+
     const days = Math.floor(hours / 24);
     return `${days} ${days === 1 ? 'day' : 'days'} ago`;
 };
 
-export { 
-    analytics, 
-    getKeyMetrics, 
-    getRegistrationTrends, 
-    getNationalityDistribution, 
-    getRecentAlerts, 
-    getWeeklyIncidentTrends 
+export {
+    analytics,
+    getKeyMetrics,
+    getRegistrationTrends,
+    getNationalityDistribution,
+    getRecentAlerts,
+    getWeeklyIncidentTrends,
+    appliction_trends
 };
