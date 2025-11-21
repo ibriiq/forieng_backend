@@ -349,10 +349,54 @@ const create = async (req, res) => {
 const index = async (req, res) => {
   try {
     const foreigners = await prisma.$queryRaw`
-        SELECT foreigners.*, settings.name as nationality
+        SELECT foreigners.*, settings.name as nationality,
+
+        count(foreigner_documents.id) as document_count
+        
         FROM foreigners
 
+        join foreigner_documents on foreigner_documents.foreign_id = foreigners.id
+
         left join settings on foreigners.nationality = settings.id
+
+
+          GROUP BY 
+            foreigners.id,
+            foreigners.first_name,
+            foreigners.last_name,
+            foreigners.mother_name,
+            foreigners.dob,
+            foreigners.gender,
+            foreigners.nationality,
+            foreigners.country_of_origin,
+            foreigners.marital_status,
+            foreigners.occupation,
+            foreigners.number,
+            foreigners.email,
+            foreigners.current_address,
+            foreigners.fullname_somaliland,
+            foreigners.relationship_somaliland,
+            foreigners.contactnumber_somaliland,
+            foreigners.address_somaliland,
+            foreigners.fullname_other,
+            foreigners.relationship_other,
+            foreigners.contactnumber_other,
+            foreigners.address_other,
+            foreigners.sponser_id,
+            foreigners.entry_date,
+            foreigners.entry_point,
+            foreigners.purpose,
+            foreigners.type_status,
+            foreigners.image,
+            foreigners.created_by,
+            foreigners.created_at,
+            foreigners.updated_at,
+            foreigners.registration_id,
+            foreigners.unique_id,
+            foreigners.status,
+            foreigners.region,
+            settings.name
+
     `;
 
     // Convert images to base64 for all foreigners
@@ -667,11 +711,25 @@ const profile = async (req, res) => {
         foreigners.contactnumber_somaliland as contactnumber_somaliland,
         foreigners.address_somaliland as address_somaliland,
         CONVERT(VARCHAR(10), foreigners.dob, 120) as dob,
-        foreigners.number as phone
+        foreigners.number as phone,
+         foreigners.unique_id as unique_id,
+          foreigners.number as phone,
+
+          region.name as region_name,
+          occupation.name as occupation_name,
+          document_types.name as document_type_name
+
+        
         FROM applications
         JOIN foreigners ON applications.foreign_id = foreigners.id
         join sponsors on foreigners.sponser_id = sponsors.id
-        join settings on foreigners.nationality = settings.id and settings.dropdown_type = 'nationalities'
+        join settings on foreigners.nationality = settings.id
+        join settings as region on foreigners.region = region.id
+        join settings as occupation on foreigners.occupation = occupation.id
+
+
+        join document_types on applications.document_type = document_types.id
+
         where applications.id = ${parseInt(id)}
     `;
     const application = Array.isArray(applicationArr) && applicationArr.length > 0 ? applicationArr[0] : null;
@@ -721,11 +779,15 @@ const ProfileForeigner = async (req, res) => {
     const { id } = req.body;
     const foreigner = await prisma.$queryRaw`
         SELECT foreigners.*, settings.name as nationality, sponsors.sponsor_name as sponsor_name,
-        entry_point.name as entry_point_name
+        entry_point.name as entry_point_name,
+        region.name as region_name,
+        country_of_origins.name as country_of_origin_name
         FROM foreigners
         join sponsors on foreigners.sponser_id = sponsors.id
         left JOIN settings on foreigners.nationality = settings.id
         left JOIN settings as entry_point on foreigners.entry_point = entry_point.id
+        left JOIN settings as region on foreigners.region = region.id
+       left join country_of_origins on foreigners.country_of_origin = country_of_origins.id
         where foreigners.id = ${parseInt(id)}
     `;
 
