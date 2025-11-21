@@ -436,18 +436,24 @@ const applicationForeigner = async (req, res) => {
     const attachments = buildAttachmentPaths(req.files);
 
     let amount = await prisma.$queryRaw`
-        SELECT label FROM settings WHERE id = ${parseInt(document_type)}
+        SELECT price as label FROM document_types WHERE id = ${parseInt(document_type)}
     `;
 
     if (amount.length < 1) {
       return res.status(400).json("Please select a valid document type");
     }
 
-    amount = amount[0].label ? amount[0].label : 0;
+    amount = amount[0].label ? amount[0].label.toString() : 0;
+
+    const timestamp = new Date().getTime();
+    const date = new Date(timestamp);
+    const formattedDate = date.toLocaleDateString('en-CA').replace(/-/g, '');
 
     const createdApplication = await prisma.$transaction(async (tx) => {
       const application = await tx.applications.create({
         data: {
+          application_id: 'APL-'.concat(formattedDate).concat("-").concat(String(await tx.applications.count() + 1).padStart(6, '0')),
+
           foreign_id: parseInt(foreigner_id),
           application_type: application_type,
           document_type: document_type,
@@ -738,8 +744,9 @@ const getDocumentsForeigner = async (req, res) => {
   try {
     const { id } = req.body;
     const documents = await prisma.$queryRaw`
-        SELECT applications.*
+        SELECT applications.*, document_types.name as document_type_name
         FROM applications
+        join document_types on applications.document_type = document_types.id
         where applications.foreign_id = ${parseInt(id)}
     `;
     return res.status(200).json(documents);

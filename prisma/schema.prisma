@@ -194,6 +194,7 @@ model applications {
   updated_at       DateTime? @db.DateTime
   is_paid          Int?      @default(0, map: "DF__applicati__is_pa__3A4CA8FD")
   amount           String    @default("0", map: "DF__applicati__amoun__3D2915A8") @db.VarChar(1000)
+  application_id   String?   @db.VarChar(250)
 }
 
 model application_statuses {

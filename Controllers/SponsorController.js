@@ -100,6 +100,7 @@ const create = async (req, res) => {
       // Optional fields (companyName, status, etc.) can be persisted
       // once dedicated columns are available in the schema.
     };
+    
     const documents = value.documents ?? [];
 
 
