@@ -505,6 +505,17 @@ const payApplication = async (req, res) => {
     // }
 
 
+    let payment = await prisma.$queryRaw`
+        SELECT *
+        FROM payments
+        where application_id = ${parseInt(id)}
+    `;
+
+    if (payment.length > 0) {
+      return res.status(500).json("Payment already exists for this application");
+    }
+
+
     const {
       receiptNumber,
       paymentType,
