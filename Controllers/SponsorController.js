@@ -33,7 +33,7 @@ const buildDocumentPayload = (files = []) =>
     .filter((doc) => doc.filePath);
 
 const sponsorSchema = Joi.object({
-  sponsorName: Joi.string().trim().min(10).max(255).required(),
+  sponsorName: Joi.string().trim().min(3).max(255).required(),
   companyName: Joi.string().allow("", null).max(255),
   type: Joi.string().required(),
   email: Joi.string().trim().lowercase().email().required(),
@@ -100,27 +100,55 @@ const create = async (req, res) => {
     };
     const documents = value.documents ?? [];
 
-    const createdSponsor = await prisma.$transaction(async (tx) => {
-      const sponsor = await tx.sponsors.create({
-        data: sponsorData,
+    if (req.body.id) {
+
+      const createdSponsor = await prisma.$transaction(async (tx) => {
+        const sponsor = await tx.sponsors.update({
+          where: { id: parseInt(req.body.id) },
+          data: sponsorData,
+        });
+
+        if (documents.length) {
+          await tx.sponsor_documents.where({where: {sponsor_id: parseInt(req.body.id)}}).deleteMany();
+          await tx.sponsor_documents.createMany({
+            data: documents.map((doc) => ({
+              sponsor_id: sponsor.id,
+              file_name: doc.fileName,
+              file_path: doc.filePath,
+              file_size_kb: doc.fileSizeKb,
+              file_type: doc.fileType,
+            })),
+          });
+        }
+
+        return sponsor;
       });
 
-      if (documents.length) {
-        await tx.sponsor_documents.createMany({
-          data: documents.map((doc) => ({
-            sponsor_id: sponsor.id,
-            file_name: doc.fileName,
-            file_path: doc.filePath,
-            file_size_kb: doc.fileSizeKb,
-            file_type: doc.fileType,
-          })),
+    }
+    else {
+
+      const createdSponsor = await prisma.$transaction(async (tx) => {
+        const sponsor = await tx.sponsors.create({
+          data: sponsorData,
         });
-      }
 
-      return sponsor;
-    });
+        if (documents.length) {
+          await tx.sponsor_documents.createMany({
+            data: documents.map((doc) => ({
+              sponsor_id: sponsor.id,
+              file_name: doc.fileName,
+              file_path: doc.filePath,
+              file_size_kb: doc.fileSizeKb,
+              file_type: doc.fileType,
+            })),
+          });
+        }
 
-    return res.status(200).json("Sponsor created successfully");
+        return sponsor;
+      });
+    }
+
+    return res.status(200).json(req.body.id ? "Sponsor updated successfully" : "Sponsor created successfully");
   } catch (error) {
     console.error("Error creating sponsor:", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -165,5 +193,24 @@ const updateStatus = async (req, res) => {
 };
 
 
+const destroy = async (req, res) => {
+  try {
+    const { id } = req.body;
 
-export { create, index, getSingle, updateStatus };
+    const foreigners = await prisma.foreigners.findMany({ where: { sponser_id: parseInt(id) } });
+    if (foreigners.length > 0) {
+      return res.status(400).json("Sponsor has foreigners and cannot be deleted");
+    }
+
+    await prisma.sponsor_documents.deleteMany({ where: { sponsor_id: parseInt(id) } });
+    await prisma.sponsors.delete({ where: { id: parseInt(id) } });
+    return res.status(200).json("Sponsor deleted successfully");
+  } catch (error) {
+    console.error("Error deleting sponsor:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+
+export { create, index, getSingle, updateStatus, destroy };

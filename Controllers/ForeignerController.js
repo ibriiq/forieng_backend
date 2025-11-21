@@ -140,7 +140,7 @@ const buildAttachmentPaths = (files = []) =>
 const create = async (req, res) => {
   try {
     console.log("req.body", req.body);
-    console.log("req.files", req.files);
+    // console.log("req.files", req.files);
 
     // Extract data from nested structure
     const personalInfo = req.body.personalInfo || {};
@@ -207,68 +207,133 @@ const create = async (req, res) => {
     const timestamp = new Date().getTime();
     const date = new Date(timestamp);
     const formattedDate = date.toLocaleDateString('en-CA').replace(/-/g, '');
-    console.log(formattedDate); // Output: 20251120 (YYYYMMDD format)
 
 
 
+    let savedImagePath = "";
 
     // Create foreigner and documents in a transaction
-    const savedImagePath = await saveBase64Image(biometricData.photo);
+    if (biometricData.photo) {
+      savedImagePath = await saveBase64Image(biometricData.photo);
+    } else {
+      savedImagePath = "";
+    }
 
-    const createdForeigner = await prisma.$transaction(async (tx) => {
-      // Create foreigner record
-      const foreigner = await tx.foreigners.create({
-        data: {
-          first_name: personalInfo.firstName || "",
-          last_name: personalInfo.lastName || "",
-          mother_name: personalInfo.motherFullName || "",
-          dob: new Date(personalInfo.dateOfBirth),
-          gender: personalInfo.gender || "",
-          nationality: parseInt(personalInfo.nationality) || 0,
-          country_of_origin: personalInfo.countryOfOrigin ? parseInt(personalInfo.countryOfOrigin) : 0,
-          marital_status: maritalStatusId,
-          occupation: occupationId,
-          number: phoneNumber,
-          email: contactInfo.email || null,
-          current_address: contactInfo.address || null,
-          fullname_somaliland: emergencySomaliland.name || null,
-          relationship_somaliland: emergencySomaliland.relationship || null,
-          contactnumber_somaliland: somalilandPhone || null,
-          address_somaliland: emergencySomaliland.address || null,
-          fullname_other: emergencyEthiopia.name || null,
-          relationship_other: emergencyEthiopia.relationship || null,
-          contactnumber_other: ethiopiaPhone || null,
-          address_other: emergencyEthiopia.address || null,
-          sponser_id: parseInt(contactInfo.sponsorId || entryInfo.sponsorId || req.body.sponsorInfo?.sponsorId || 0),
-          entry_date: new Date(entryInfo.entryDate),
-          entry_point: entryInfo.entryPoint || "",
-          purpose: entryInfo.purposeOfEntry || "",
-          type_status: entryInfo.typeOfStay || "",
-          image: savedImagePath || "",
-          created_by: parseInt(req.body.created_by || 1), // Default to 1 if not provided
-          created_at: new Date(),
-          updated_at: new Date(),
-          registration_id: "FRN-".concat(formattedDate).concat("-").concat(await tx.foreigners.count() + 1),
-        },
-      });
 
-      // Create document records
-      if (documents.length > 0) {
-        await tx.foreigner_documents.createMany({
-          data: documents.map((doc) => ({
-            foreign_id: foreigner.id,
-            type_id: doc.type_id,
-            file_name: doc.file_name,
-          })),
+    let  createdForeigner = null;
+    
+    // console.log("req.id", req.body.id);
+    if (req.body.id) {
+      const createdForeigner = await prisma.$transaction(async (tx) => {
+        // Create foreigner record
+        const foreigner = await tx.foreigners.update({
+          where: {id: parseInt(req.body.id)},
+          data: {
+            first_name: personalInfo.firstName || "",
+            last_name: personalInfo.lastName || "",
+            mother_name: personalInfo.motherFullName || "",
+            dob: new Date(personalInfo.dateOfBirth ? personalInfo.dateOfBirth : new Date()),
+            gender: personalInfo.gender || "",
+            nationality: parseInt(personalInfo.nationality) || 0,
+            country_of_origin: personalInfo.countryOfOrigin ? parseInt(personalInfo.countryOfOrigin) : 0,
+            marital_status: maritalStatusId,
+            occupation: occupationId,
+            number: phoneNumber,
+            email: contactInfo.email || null,
+            current_address: contactInfo.address || null,
+            fullname_somaliland: emergencySomaliland.name || null,
+            relationship_somaliland: emergencySomaliland.relationship || null,
+            contactnumber_somaliland: somalilandPhone || null,
+            address_somaliland: emergencySomaliland.address || null,
+            fullname_other: emergencyEthiopia.name || null,
+            relationship_other: emergencyEthiopia.relationship || null,
+            contactnumber_other: ethiopiaPhone || null,
+            address_other: emergencyEthiopia.address || null,
+            sponser_id: parseInt(contactInfo.sponsorId || entryInfo.sponsorId || req.body.sponsorInfo?.sponsorId || 0),
+            entry_date: new Date(entryInfo.entryDate ? entryInfo.entryDate : new Date()),
+            entry_point: entryInfo.entryPoint || "",
+            purpose: entryInfo.purposeOfEntry || "",
+            type_status: entryInfo.typeOfStay || "",
+            image: savedImagePath || "",
+            created_by: parseInt(req.body.created_by || 1), // Default to 1 if not provided
+            created_at: new Date(),
+            updated_at: new Date(),
+            registration_id: "FRN-".concat(formattedDate).concat("-").concat(await tx.foreigners.count() + 1),
+          },
         });
-      }
 
-      return foreigner;
-    });
+        // Create document records
+        if (documents.length > 0) {
+          await tx.foreigner_documents.where({where: {foreign_id: parseInt(req.id)}}).deleteMany();
+          await tx.foreigner_documents.createMany({
+            data: documents.map((doc) => ({
+              foreign_id: foreigner.id,
+              type_id: doc.type_id,
+              file_name: doc.file_name,
+            })),
+          });
+        }
+
+        return foreigner;
+      });
+    } else {
+      const createdForeigner = await prisma.$transaction(async (tx) => {
+        // Create foreigner record
+        const foreigner = await tx.foreigners.create({
+          data: {
+            first_name: personalInfo.firstName || "",
+            last_name: personalInfo.lastName || "",
+            mother_name: personalInfo.motherFullName || "",
+            dob: new Date(personalInfo.dateOfBirth ? personalInfo.dateOfBirth : new Date()),
+            gender: personalInfo.gender || "",
+            nationality: parseInt(personalInfo.nationality) || 0,
+            country_of_origin: personalInfo.countryOfOrigin ? parseInt(personalInfo.countryOfOrigin) : 0,
+            marital_status: maritalStatusId,
+            occupation: occupationId,
+            number: phoneNumber,
+            email: contactInfo.email || null,
+            current_address: contactInfo.address || null,
+            fullname_somaliland: emergencySomaliland.name || null,
+            relationship_somaliland: emergencySomaliland.relationship || null,
+            contactnumber_somaliland: somalilandPhone || null,
+            address_somaliland: emergencySomaliland.address || null,
+            fullname_other: emergencyEthiopia.name || null,
+            relationship_other: emergencyEthiopia.relationship || null,
+            contactnumber_other: ethiopiaPhone || null,
+            address_other: emergencyEthiopia.address || null,
+            sponser_id: parseInt(contactInfo.sponsorId || entryInfo.sponsorId || req.body.sponsorInfo?.sponsorId || 0),
+            entry_date: new Date(entryInfo.entryDate ? entryInfo.entryDate : new Date()),
+            entry_point: entryInfo.entryPoint || "",
+            purpose: entryInfo.purposeOfEntry || "",
+            type_status: entryInfo.typeOfStay || "",
+            image: savedImagePath || "",
+            created_by: parseInt(req.body.created_by || 1), // Default to 1 if not provided
+            created_at: new Date(),
+            updated_at: new Date(),
+            registration_id: "FRN-".concat(formattedDate).concat("-").concat(await tx.foreigners.count() + 1),
+          },
+        });
+
+        // Create document records
+        if (documents.length > 0) {
+          await tx.foreigner_documents.createMany({
+            data: documents.map((doc) => ({
+              foreign_id: foreigner.id,
+              type_id: doc.type_id,
+              file_name: doc.file_name,
+            })),
+          });
+        }
+
+        return foreigner;
+      });
+    }
+
+
 
     return res.status(200).json({
       message: "Foreigner created successfully",
-      id: createdForeigner.id
+      id: createdForeigner?.id || null
     });
   } catch (error) {
     console.error("Error creating foreigner:", error);
@@ -281,7 +346,8 @@ const index = async (req, res) => {
     const foreigners = await prisma.$queryRaw`
         SELECT foreigners.*, settings.name as nationality
         FROM foreigners
-        join settings on foreigners.nationality = settings.id
+
+        left join settings on foreigners.nationality = settings.id
     `;
 
     // Convert images to base64 for all foreigners
@@ -435,7 +501,7 @@ const getApplication = async (req, res) => {
         order by applications.created_at desc
     `;
 
-        // Transform results to add base URL
+    // Transform results to add base URL
     const transformedApplications = application.map(app => ({
       ...app,
       photoUrl: `${baseUrl}/${app.photoUrl.replace('base_url', '')}` // Clean path here
@@ -610,7 +676,7 @@ const profile = async (req, res) => {
 const getSponsers = async (req, res) => {
   try {
     const sponsers = await prisma.$queryRaw`
-        SELECT sponsor_name FROM foreigners
+        SELECT sponsors.id,sponsor_name FROM foreigners
         join sponsors on foreigners.sponser_id = sponsors.id
         where foreigners.id = ${parseInt(req.body.id)}
     `;
@@ -626,12 +692,11 @@ const getSingle = async (req, res) => {
   try {
     const { id } = req.body;
     const foreigner = await prisma.$queryRaw`
-        SELECT foreigners.*, settings.name as nationality
+        SELECT foreigners.*
         FROM foreigners
-        left JOIN settings on foreigners.nationality = settings.id and settings.dropdown_type = 'nationalities'
         where foreigners.id = ${parseInt(id)}
     `;
-    return res.status(200).json(foreigner);
+    return res.status(200).json(foreigner[0] || []);
   } catch (error) {
     console.error("Error fetching foreigner:", error);
     return res.status(500).json("Internal server error");
@@ -659,7 +724,7 @@ const ProfileForeigner = async (req, res) => {
         where foreign_id = ${parseInt(id)}
     `;
 
-    
+
     return res.status(200).json(foreigner[0] || []);
   } catch (error) {
     console.error("Error fetching foreigner:", error);
@@ -667,6 +732,21 @@ const ProfileForeigner = async (req, res) => {
   }
 }
 
+
+const getDocumentsForeigner = async (req, res) => {
+  try {
+    const { id } = req.body;
+    const documents = await prisma.$queryRaw`
+        SELECT applications.*
+        FROM applications
+        where applications.foreign_id = ${parseInt(id)}
+    `;
+    return res.status(200).json(documents);
+  } catch (error) {
+    console.error("Error fetching documents:", error);
+    return res.status(500).json("Internal server error");
+  }
+}
 
 
 
@@ -682,6 +762,6 @@ export {
   profile,
   getSponsers,
   getSingle,
-  ProfileForeigner
-  
+  ProfileForeigner,
+  getDocumentsForeigner
 };

@@ -13,9 +13,16 @@ import {
   applicationForeigner, getApplication,
   ApproveApplication, payApplication, profile,
   getSponsers,
-  ProfileForeigner
+  ProfileForeigner,
+  getSingle as getSingleForeigner,
+  getDocumentsForeigner
 } from './Controllers/ForeignerController.js';
-import { create as createSponsor, index as indexSponsor, getSingle as getSingleSponsor, updateStatus as updateStatusSponsor } from './Controllers/SponsorController.js';
+import { create as createSponsor, 
+  index as indexSponsor, 
+  getSingle as getSingleSponsor, 
+  updateStatus as updateStatusSponsor,
+  destroy as destroySponsor
+} from './Controllers/SponsorController.js';
 import { 
   create as createExpenseCategory, 
   index as indexExpenseCategory, 
@@ -126,6 +133,9 @@ router.post('/foreigners/pay_application', payApplication);
 router.post('/foreigners/profile', profile);
 router.post('/foreigners/sponsers', getSponsers);
 router.post('/foreigners/foreign_profile', ProfileForeigner);
+router.post('/foreigners/getSingle', getSingleForeigner);
+router.post('/foreigners/Documents', getDocumentsForeigner);
+
 
 
 
@@ -140,6 +150,7 @@ router.post('/sponsors/create', upload.any(), createSponsor);
 router.post('/sponsors/', indexSponsor);
 router.post('/sponsors/getSingle', getSingleSponsor);
 router.post('/sponsors/updateStatus', updateStatusSponsor);
+router.post('/sponsors/destroy', destroySponsor);
 
 
 
