@@ -132,6 +132,7 @@ model foreigners {
   registration_id          String?   @db.VarChar(500)
   unique_id                String?   @db.VarChar(150)
   status                   String?   @default("Registered", map: "DF__foreigner__statu__756D6ECB") @db.VarChar(50)
+  region                   Int?
 }
 
 model sponsor_documents {

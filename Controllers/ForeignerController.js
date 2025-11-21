@@ -258,7 +258,9 @@ const create = async (req, res) => {
             created_by: parseInt(req.body.created_by || 1), // Default to 1 if not provided
             created_at: new Date(),
             updated_at: new Date(),
-            registration_id: "FRN-".concat(formattedDate).concat("-").concat(await tx.foreigners.count() + 1),
+            region: parseInt(req.body.region || 0),
+            unique_id: req.body.unique_id || "",
+            // registration_id: "FRN-".concat(formattedDate).concat("-").concat(await tx.foreigners.count() + 1),
           },
         });
 
@@ -311,7 +313,9 @@ const create = async (req, res) => {
             created_at: new Date(),
             updated_at: new Date(),
             registration_id: "FRN-".concat(formattedDate).concat("-").concat(await tx.foreigners.count() + 1),
-            status: 'Registered'
+            status: 'Registered',
+            region: parseInt(req.body.region || 0),
+            unique_id: req.body.unique_id || "",
           },
         });
 
