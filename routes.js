@@ -12,7 +12,8 @@ import {
   index as indexForeigner, search,
   applicationForeigner, getApplication,
   ApproveApplication, payApplication, profile,
-  getSponsers
+  getSponsers,
+  ProfileForeigner
 } from './Controllers/ForeignerController.js';
 import { create as createSponsor, index as indexSponsor, getSingle as getSingleSponsor, updateStatus as updateStatusSponsor } from './Controllers/SponsorController.js';
 import { 
@@ -41,6 +42,31 @@ import {
   dashboard_cards
 } from './Controllers/WithdrawalController.js';
 
+import {
+  create as createDocumentType,
+  index as indexDocumentType,
+  getSingle as getSingleDocumentType,
+  destroy as destroyDocumentType,
+} from './Controllers/DocumentTypesController.js';
+
+import {
+  create as createRole,
+  index as indexRole,
+  getSingle as getSingleRole,
+  destroy as destroyRole,
+  getPermissions as getRolePermissions,
+  setPermissions as setRolePermissions,
+} from './Controllers/RolesController.js';
+
+
+import {
+  analytics,
+  getKeyMetrics,
+  getRegistrationTrends,
+  getNationalityDistribution,
+  getRecentAlerts,
+  getWeeklyIncidentTrends
+} from './Controllers/DashboardController.js';
 
 
 
@@ -99,6 +125,7 @@ router.post('/foreigners/approve_approval', ApproveApplication);
 router.post('/foreigners/pay_application', payApplication);
 router.post('/foreigners/profile', profile);
 router.post('/foreigners/sponsers', getSponsers);
+router.post('/foreigners/foreign_profile', ProfileForeigner);
 
 
 
@@ -157,5 +184,31 @@ router.post('/withdrawal/dashboard_cards', dashboard_cards);
 
 
 
+
+// Document Types routes begin here
+router.post('/document_type/', indexDocumentType);
+router.post('/document_type/create', createDocumentType);
+router.post('/document_type/getSingle', getSingleDocumentType);
+router.post('/document_type/destroy', destroyDocumentType);
+
+
+
+
+// Roles routes begin here
+router.post('/roles/', indexRole);
+router.post('/roles/create', createRole);
+router.post('/roles/getSingle', getSingleRole);
+router.post('/roles/destroy', destroyRole);
+router.post('/roles/getPermissions', getRolePermissions);
+router.post('/roles/setPermissions', setRolePermissions);
+
+
+// Dashboard routes begin here
+router.post('/dashboard/analytics', analytics);
+router.post('/dashboard/key-metrics', getKeyMetrics);
+router.post('/dashboard/getRegistrationTrends', getRegistrationTrends);
+router.post('/dashboard/getNationalityDistribution', getNationalityDistribution);
+router.post('/dashboard/recent-alerts', getRecentAlerts);
+router.post('/dashboard/weekly-incident-trends', getWeeklyIncidentTrends);
 
 export default router;

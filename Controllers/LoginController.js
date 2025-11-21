@@ -94,8 +94,9 @@ const logout = async (req, res) => {
     let token = req.headers.authorization || "";
     token = token.split(" ")[1];
 
-    console.log(token);
-    await prisma.Session.delete({ where: { token: token } });
+    res.clearCookie("authToken");
+
+    // await prisma.Session.delete({ where: { token: token } });
     return res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     console.error("Logout error:", error);

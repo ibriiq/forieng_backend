@@ -1,5 +1,96 @@
+import fs from "fs";
 import path from "path";
+import { randomUUID } from "crypto";
 import prisma from "../lib/prisma.js";
+import joi from "joi";
+
+const ensureDirectory = (dirPath) => {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+};
+
+const buildFileUrl = (req, relativePath) => {
+  if (!relativePath) return null;
+  const sanitizedPath = relativePath.replace(/^\/+/, "");
+  const baseUrl =
+    process.env.APP_URL || `${req.protocol}://${req.get("host") || "localhost"}`;
+  return `${baseUrl}/${sanitizedPath}`;
+};
+
+const imageToBase64 = async (relativePath) => {
+  try {
+    if (!relativePath) return null;
+
+    // Convert relative path to absolute path
+    const absolutePath = path.resolve(relativePath);
+
+    // Check if file exists
+    if (!fs.existsSync(absolutePath)) {
+      return null;
+    }
+
+    // Read file as buffer
+    const buffer = await fs.promises.readFile(absolutePath);
+
+    // Determine MIME type from file extension
+    const ext = path.extname(absolutePath).toLowerCase();
+    const mimeMap = {
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".webp": "image/webp",
+      ".gif": "image/gif",
+    };
+
+    const mimeType = mimeMap[ext] || "image/jpeg";
+
+    // Convert buffer to base64
+    const base64String = buffer.toString("base64");
+
+    // Return data URI
+    return `data:${mimeType};base64,${base64String}`;
+  } catch (error) {
+    console.error("Error converting image to base64:", error);
+    return null;
+  }
+};
+
+const saveBase64Image = async (dataUri) => {
+  try {
+    if (!dataUri || typeof dataUri !== "string") {
+      return "";
+    }
+
+    const match = dataUri.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+    if (!match) {
+      return "";
+    }
+
+    const [, mimeType, base64Data] = match;
+    const extensionMap = {
+      "image/jpeg": "jpg",
+      "image/jpg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+      "image/gif": "gif",
+    };
+
+    const extension = extensionMap[mimeType] || "bin";
+    const buffer = Buffer.from(base64Data, "base64");
+    const uploadsDir = path.resolve("uploads", "biometrics");
+    ensureDirectory(uploadsDir);
+
+    const filename = `${randomUUID()}.${extension}`;
+    const absolutePath = path.join(uploadsDir, filename);
+    await fs.promises.writeFile(absolutePath, buffer);
+
+    return path.relative(process.cwd(), absolutePath).replace(/\\/g, "/");
+  } catch (error) {
+    console.error("Failed to save base64 image:", error);
+    return "";
+  }
+};
 
 // Helper function to get setting ID by name/label and dropdown type
 const getSettingId = async (value, dropdownType) => {
@@ -118,7 +209,12 @@ const create = async (req, res) => {
     const formattedDate = date.toLocaleDateString('en-CA').replace(/-/g, '');
     console.log(formattedDate); // Output: 20251120 (YYYYMMDD format)
 
+
+
+
     // Create foreigner and documents in a transaction
+    const savedImagePath = await saveBase64Image(biometricData.photo);
+
     const createdForeigner = await prisma.$transaction(async (tx) => {
       // Create foreigner record
       const foreigner = await tx.foreigners.create({
@@ -148,7 +244,7 @@ const create = async (req, res) => {
           entry_point: entryInfo.entryPoint || "",
           purpose: entryInfo.purposeOfEntry || "",
           type_status: entryInfo.typeOfStay || "",
-          image: biometricData.photo || "",
+          image: savedImagePath || "",
           created_by: parseInt(req.body.created_by || 1), // Default to 1 if not provided
           created_at: new Date(),
           updated_at: new Date(),
@@ -182,8 +278,21 @@ const create = async (req, res) => {
 
 const index = async (req, res) => {
   try {
-    const foreigners = await prisma.foreigners.findMany();
-    return res.status(200).json(foreigners);
+    const foreigners = await prisma.$queryRaw`
+        SELECT foreigners.*, settings.name as nationality
+        FROM foreigners
+        join settings on foreigners.nationality = settings.id
+    `;
+
+    // Convert images to base64 for all foreigners
+    const foreignersWithImages = await Promise.all(
+      foreigners.map(async (foreigner) => ({
+        ...foreigner,
+        image_base64: await imageToBase64(foreigner.image),
+      }))
+    );
+
+    return res.status(200).json(foreignersWithImages);
   } catch (error) {
     console.error("Error fetching foreigners:", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -263,7 +372,7 @@ const applicationForeigner = async (req, res) => {
         SELECT label FROM settings WHERE id = ${parseInt(document_type)}
     `;
 
-    if(amount.length < 1) {
+    if (amount.length < 1) {
       return res.status(400).json("Please select a valid document type");
     }
 
@@ -281,7 +390,7 @@ const applicationForeigner = async (req, res) => {
           created_by: parseInt(req.user.id),
           created_at: new Date(),
           updated_at: new Date(),
-          amount : amount
+          amount: amount
         },
       });
 
@@ -306,20 +415,34 @@ const applicationForeigner = async (req, res) => {
 
 const getApplication = async (req, res) => {
   try {
+
+    // Access server host and port from environment variables (with defaults)
+    const host = process.env.HOST || 'localhost';
+    const port = process.env.PORT || 3000;
+
+    const baseUrl = `http://${host}:${port}`;
+
     const application = await prisma.$queryRaw`
         SELECT applications.*, concat(foreigners.first_name, ' ', foreigners.last_name) as full_name, foreigners.registration_id, settings.name as nationality,
         sponsors.sponsor_name as sponsor_name,
         foreigners.registration_id as passport_number,
-        applications.amount as amount
+        applications.amount as amount,
+        concat('base_url', foreigners.image) as photoUrl
         FROM applications
         JOIN foreigners ON applications.foreign_id = foreigners.id
         join sponsors on foreigners.sponser_id = sponsors.id
         join settings on foreigners.nationality = settings.id and settings.dropdown_type = 'nationalities'
-        
+        order by applications.created_at desc
     `;
 
+        // Transform results to add base URL
+    const transformedApplications = application.map(app => ({
+      ...app,
+      photoUrl: `${baseUrl}/${app.photoUrl.replace('base_url', '')}` // Clean path here
+    }));
 
-    return res.status(200).json(application);
+
+    return res.status(200).json(transformedApplications);
   } catch (error) {
     console.error("Error fetching applications:", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -364,6 +487,23 @@ const payApplication = async (req, res) => {
         error: "id, receiptNumber, and paymentType are required fields.",
       });
     }
+
+    // joi.object({
+    //   receiptNumber: joi.string().required(),
+    //   paymentType: joi.string().required(),
+    //   accountSentTo: joi.string().required(),
+    //   amount: joi.number().required(),
+    //   currency: joi.string().required(),
+    //   paymentDate: joi.date().required(),
+    //   bankName: joi.string().required(),
+    // });
+
+    // const { error } = schema.validate(paymentInfo);
+
+    // if (error) {
+    //   return res.status(400).json({ error: error.message });
+    // }
+
 
     const {
       receiptNumber,
@@ -471,6 +611,50 @@ const getSponsers = async (req, res) => {
 };
 
 
+const getSingle = async (req, res) => {
+  try {
+    const { id } = req.body;
+    const foreigner = await prisma.$queryRaw`
+        SELECT foreigners.*, settings.name as nationality
+        FROM foreigners
+        left JOIN settings on foreigners.nationality = settings.id and settings.dropdown_type = 'nationalities'
+        where foreigners.id = ${parseInt(id)}
+    `;
+    return res.status(200).json(foreigner);
+  } catch (error) {
+    console.error("Error fetching foreigner:", error);
+    return res.status(500).json("Internal server error");
+  }
+};
+
+
+
+const ProfileForeigner = async (req, res) => {
+  try {
+    const { id } = req.body;
+    const foreigner = await prisma.$queryRaw`
+        SELECT foreigners.*, settings.name as nationality, sponsors.sponsor_name as sponsor_name,
+        entry_point.name as entry_point_name
+        FROM foreigners
+        join sponsors on foreigners.sponser_id = sponsors.id
+        left JOIN settings on foreigners.nationality = settings.id
+        left JOIN settings as entry_point on foreigners.entry_point = entry_point.id
+        where foreigners.id = ${parseInt(id)}
+    `;
+
+    const documents = await prisma.$queryRaw`
+        SELECT *
+        FROM foreigner_documents
+        where foreign_id = ${parseInt(id)}
+    `;
+
+    
+    return res.status(200).json(foreigner[0] || []);
+  } catch (error) {
+    console.error("Error fetching foreigner:", error);
+    return res.status(500).json("Internal server error");
+  }
+}
 
 
 
@@ -485,5 +669,8 @@ export {
   ApproveApplication,
   payApplication,
   profile,
-  getSponsers
+  getSponsers,
+  getSingle,
+  ProfileForeigner
+  
 };

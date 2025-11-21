@@ -83,7 +83,7 @@ model roles {
   status     String                   @db.VarChar(50)
   created_by Int
   created_at Unsupported("timestamp")
-  updated_a  DateTime?                @db.DateTime
+  updated_at DateTime?                @db.DateTime
 
   @@map("roles")
 }
@@ -130,6 +130,7 @@ model foreigners {
   created_at               DateTime? @db.DateTime
   updated_at               DateTime? @db.DateTime
   registration_id          String?   @db.VarChar(500)
+  unique_id                String?   @db.VarChar(150)
 }
 
 model sponsor_documents {
@@ -252,4 +253,13 @@ model withdrawals {
   updated_at             DateTime? @db.DateTime
   status                 String?   @default("pending", map: "DF__withdrawa__statu__58D1301D") @db.VarChar(50)
   reference              String?   @db.VarChar(250)
+}
+
+model document_types {
+  id         Int       @id(map: "PK__document__3213E83F514C38AF") @default(autoincrement())
+  name       String    @db.VarChar(50)
+  price      Float     @db.Money
+  validity   Int
+  created_by Int
+  created_at DateTime? @db.DateTime
 }

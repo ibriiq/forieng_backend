@@ -3,6 +3,9 @@ import router from './routes.js';
 import userInfo from './middleware/userInfo.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser'; // Import cookie-parser
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
 const app = express();
 
@@ -15,6 +18,20 @@ const corsOptions = {
   // allowedHeaders: ['Content-Type', 'Authorization'], // Example: specify allowed headers
   credentials: true, // **CRITICAL**: Allows cookies to be sent
 };
+
+
+
+
+// Get current directory equivalent to __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+console.log(join(__dirname, ''));
+
+// Now you can use __dirname as before
+app.use(express.static(join(__dirname, '')));
+
+
 
 app.use(cors(corsOptions));
 
