@@ -548,11 +548,17 @@ const getApplication = async (req, res) => {
         sponsors.sponsor_name as sponsor_name,
         foreigners.registration_id as passport_number,
         applications.amount as amount,
-        concat('base_url', foreigners.image) as photoUrl
+        concat('base_url', foreigners.image) as photoUrl,
+        foreigners.number as phone,
+        foreigners.gender as gender,
+        region.name as region_name,
+        foreigners.type_status stay_type_name
+
         FROM applications
         JOIN foreigners ON applications.foreign_id = foreigners.id
         left join sponsors on foreigners.sponser_id = sponsors.id
-        left join settings on foreigners.nationality = settings.id and settings.dropdown_type = 'nationalities'
+        left join settings on foreigners.nationality = settings.id
+        left join settings as region on foreigners.region = region.id
         order by applications.created_at desc
     `;
 
