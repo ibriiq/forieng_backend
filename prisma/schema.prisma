@@ -277,3 +277,24 @@ model country_of_origins {
   created_by     Int
   created_at     DateTime? @db.DateTime
 }
+
+model report_centers {
+  id          Int     @id(map: "PK__report_c__3213E83F62DB182B") @default(autoincrement())
+  name        String  @db.VarChar(500)
+  description String  @db.VarChar(500)
+  permission  String? @db.VarChar(500)
+  proc_name   String  @db.VarChar(1000)
+}
+
+model report_parameters {
+  id            Int     @id(map: "PK__report_p__3213E83F4128ACA6") @default(autoincrement())
+  name          String  @db.VarChar(500)
+  label         String  @db.VarChar(500)
+  type          String  @db.VarChar(50)
+  placeholder   String? @db.Text
+  report_id     Int
+  value_type    String  @db.VarChar(50)
+  values        String  @db.Text
+  parent_id     Int
+  default_value String? @db.VarChar(500)
+}

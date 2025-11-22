@@ -88,6 +88,14 @@ import {
 } from './Controllers/DashboardController.js';
 
 
+import { 
+  index as indexReports,
+  load_report as load_report,
+  run_report,
+  get_param_values
+ } from './Controllers/ReportsController.js';
+
+
 
 
 
@@ -245,6 +253,12 @@ router.post('/country-of-origin/getSingle', getSingleCountryOfOrigin);
 router.post('/country-of-origin/destroy', destroyCountryOfOrigin);
 router.post('/country-of-origin/getById', getCountryOfOriginById);
 
+
+// Reports routes begin here
+router.post('/reports/', indexReports);
+router.post('/reports/load_report', load_report);
+router.post('/reports/run_report', run_report);
+router.post('/reports/get_param_values', get_param_values);
 
 
 export default router;
