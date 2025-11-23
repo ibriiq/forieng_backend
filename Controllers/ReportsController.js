@@ -2,8 +2,12 @@
 
 export const index = async (req, res) => {
     try {
+        const role_id = req.user.role_id;
+        
         const reports = await prisma.$queryRaw`
-        SELECT * FROM report_centers
+        SELECT report_centers.* FROM report_centers
+        join permissions on report_centers.permission = permissions.name
+        join role_has_permissons on permissions.id = role_has_permissons.permission_id and role_has_permissons.role_id in (${role_id.join(',')})
         `;
         return res.status(200).json(reports);
     } catch (error) {
@@ -20,6 +24,28 @@ export const load_report = async (req, res) => {
         const report = await prisma.$queryRaw`
         SELECT * FROM report_centers where id = ${report_id}
         `;
+
+
+        console.log("report", report[0].permission);
+
+
+        const role_id = req.user.role_id;
+        console.log("role_id", role_id.join(','));
+        let reports = `
+        SELECT permission_id FROM role_has_permissons
+            join permissions on role_has_permissons.permission_id = permissions.id
+            where role_has_permissons.role_id in (${role_id.join(',')}) and permissions.name = '${report[0].permission ? report[0].permission : ''}'
+        `;
+
+        console.log("reports", reports);
+
+        const report_permission = await prisma.$queryRawUnsafe(reports);
+
+        console.log("report_permission", report_permission);
+        
+        if(report_permission.length < 1) {
+            return res.status(403).json("You are not authorized to access this report");
+        }
 
 
         const report_parameters = await prisma.$queryRaw`

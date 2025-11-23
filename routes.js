@@ -4,7 +4,7 @@ import path from 'path';
 import { randomUUID } from 'crypto';
 import multer from 'multer';
 import mime from 'mime-types';
-import { login, logout, userInfo } from './Controllers/LoginController.js';
+import { login, logout, userInfo, getPermissions } from './Controllers/LoginController.js';
 import { index, create, getSingle, destroy } from './Controllers/RegionController.js';
 import { create as createUser, getRoles, index as indexUsers } from './Controllers/UserController.js';
 import {
@@ -76,6 +76,14 @@ import {
   getCountryOfOriginById
 } from './Controllers/CountryOfOriginController.js';
 
+import {
+  create as createDistrict,
+  index as indexDistrict,
+  getSingle as getSingleDistrict,
+  destroy as destroyDistrict,
+  getByRegionDistrict,
+} from './Controllers/DistrictsController.js';
+
 
 import {
   analytics,
@@ -127,6 +135,7 @@ const upload = multer({ storage });
 
 
 router.post('/login', login);
+router.post('/getPermissions', getPermissions);
 router.post('/logout', logout);
 router.post('/user', userInfo);
 
@@ -259,6 +268,14 @@ router.post('/reports/', indexReports);
 router.post('/reports/load_report', load_report);
 router.post('/reports/run_report', run_report);
 router.post('/reports/get_param_values', get_param_values);
+
+// Districts routes begin here
+router.post('/district/', indexDistrict);
+router.post('/district/create', createDistrict);
+router.post('/district/getSingle', getSingleDistrict);
+router.post('/district/destroy', destroyDistrict);
+router.post('/district/getByRegion', getByRegionDistrict);
+
 
 
 export default router;

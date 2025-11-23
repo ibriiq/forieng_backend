@@ -259,6 +259,7 @@ const create = async (req, res) => {
             created_at: new Date(),
             updated_at: new Date(),
             region: parseInt(req.body.region || 0),
+            district: parseInt(req.body.district || 0),
             unique_id: req.body.unique_id || "",
             // registration_id: "FRN-".concat(formattedDate).concat("-").concat(await tx.foreigners.count() + 1),
           },
@@ -315,6 +316,7 @@ const create = async (req, res) => {
             registration_id: "FRN-".concat(formattedDate).concat("-").concat(await tx.foreigners.count() + 1),
             status: 'Registered',
             region: parseInt(req.body.region || 0),
+            district: parseInt(req.body.district || 0),
             unique_id: req.body.unique_id || "",
           },
         });
@@ -350,6 +352,7 @@ const index = async (req, res) => {
   try {
     const foreigners = await prisma.$queryRaw`
         SELECT foreigners.*, settings.name as nationality,
+        districts.name as district_name,
 
         count(foreigner_documents.id) as document_count
         
@@ -358,6 +361,7 @@ const index = async (req, res) => {
         join foreigner_documents on foreigner_documents.foreign_id = foreigners.id
 
         left join settings on foreigners.nationality = settings.id
+        left join districts on foreigners.district = districts.id
 
 
           GROUP BY 
@@ -395,8 +399,9 @@ const index = async (req, res) => {
             foreigners.unique_id,
             foreigners.status,
             foreigners.region,
-            settings.name
-
+            settings.name,
+            foreigners.district,
+            districts.name
     `;
 
     // Convert images to base64 for all foreigners
@@ -552,13 +557,19 @@ const getApplication = async (req, res) => {
         foreigners.number as phone,
         foreigners.gender as gender,
         region.name as region_name,
-        foreigners.type_status stay_type_name
+        foreigners.type_status stay_type_name,
+        document_types.name as document_type_name,
+        foreigners.unique_id as unique_id,
+        districts.name as district_name
 
         FROM applications
         JOIN foreigners ON applications.foreign_id = foreigners.id
         left join sponsors on foreigners.sponser_id = sponsors.id
         left join settings on foreigners.nationality = settings.id
         left join settings as region on foreigners.region = region.id
+        left join document_types on applications.document_type = document_types.id
+        left join districts on foreigners.district = districts.id
+
         order by applications.created_at desc
     `;
 
@@ -718,12 +729,12 @@ const profile = async (req, res) => {
         foreigners.address_somaliland as address_somaliland,
         CONVERT(VARCHAR(10), foreigners.dob, 120) as dob,
         foreigners.number as phone,
-         foreigners.unique_id as unique_id,
-          foreigners.number as phone,
+        foreigners.unique_id as unique_id,
+        foreigners.number as phone,
 
-          region.name as region_name,
-          occupation.name as occupation_name,
-          document_types.name as document_type_name
+        region.name as region_name,
+        occupation.name as occupation_name,
+        document_types.name as documentType
 
         
         FROM applications

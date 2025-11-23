@@ -107,20 +107,33 @@ const destroy = async (req, res) => {
   }
 };
 
+
 const getPermissions = async (req, res) => {
   try {
-    const { role_id } = req.body;
-
-
-    // Get permissions for the role
-    const rolePermissions = await prisma.$queryRaw`
-      SELECT id, name as permission_name
-      FROM permissions
+    // const permissions = await prisma.permissions.findMany();
+    const permissions = await prisma.$queryRaw`
+      SELECT 
+      distinct permissions.*, 
+      case when role_has_permissons.id is not null then 1 else 0 end as is_assigned FROM permissions
+      left join role_has_permissons on permissions.id = role_has_permissons.permission_id and role_has_permissons.role_id = ${parseInt(req.body.id)}
     `;
 
-    return res.status(200).json(rolePermissions);
+    
+    // let processedPermissions = [];
+    // for (const permission of permissions) {
+    //   if(!processedPermissions[permission.module]) {
+    //     processedPermissions[permission.module] = {};
+    //   }
+    //   if(!processedPermissions[permission.group]) {
+    //     processedPermissions[permission.module][permission.group] = [];
+    //   }
+    //   processedPermissions[permission.module][permission.group].push(permission);
+    // }
+    // console.log("processedPermissions",  processedPermissions[permission.group][permission.module]);
+    console.log("permissions", permissions);
+    return res.status(200).json(permissions);
   } catch (error) {
-    console.error("Error fetching role permissions:", error);
+    console.error("Error fetching permissions:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -137,6 +150,21 @@ const setPermissions = async (req, res) => {
       return res.status(400).json({ error: "permission_ids must be an array" });
     }
 
+    console.log("permission_ids", permission_ids);
+
+    let new_permission_ids = []
+
+    for (const permission of permission_ids) {
+      if (permission != null) {
+        new_permission_ids.push(permission);
+      }
+    }
+
+
+
+    // console.log("new_permission_ids", new_permission_ids);
+
+
     await prisma.$transaction(async (tx) => {
       // Delete existing permissions for the role
       await tx.$executeRaw`
@@ -144,11 +172,11 @@ const setPermissions = async (req, res) => {
       `;
 
       // Insert new permissions
-      if (permission_ids.length > 0) {
-        for (const permission_id of permission_ids) {
+      if (new_permission_ids.length > 0) {
+        for (const permission_id of new_permission_ids) {
           await tx.$executeRaw`
-            INSERT INTO role_has_permissons (role_id, permission_id, created_at, updated_at)
-            VALUES (${parseInt(role_id)}, ${parseInt(permission_id)}, ${new Date()}, ${new Date()})
+            INSERT INTO role_has_permissons (role_id, permission_id)
+            VALUES (${parseInt(role_id)}, ${parseInt(permission_id)})
           `;
         }
       }

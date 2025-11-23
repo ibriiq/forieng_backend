@@ -43,10 +43,15 @@ const userInfo = async (req, res, next) => {
       return res.status(401).json({ error: 'User not found.' });
     }
 
+    const role_id = await prisma.$queryRaw`
+      SELECT role_id FROM user_has_roles WHERE user_id = ${user.id}
+    `;
+
     req.user = {
       id: user.id,
       name: user.name,
       email: user.email,
+      role_id: role_id.map(role => role.role_id)
     };
 
     req.session = session;

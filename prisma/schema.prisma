@@ -67,6 +67,9 @@ model permissions {
   created_by Int
   created_at Unsupported("timestamp")
   updated_a  DateTime?                @db.DateTime
+  group      String?                  @db.VarChar(50)
+  module     String?                  @db.VarChar(50)
+  title      String?                  @db.VarChar(250)
 }
 
 model role_has_permissons {
@@ -133,6 +136,7 @@ model foreigners {
   unique_id                String?   @db.VarChar(150)
   status                   String?   @default("Registered", map: "DF__foreigner__statu__756D6ECB") @db.VarChar(50)
   region                   Int?
+  district                 Int?      @default(0, map: "DF__foreigner__distr__0880433F")
 }
 
 model sponsor_documents {
@@ -287,14 +291,23 @@ model report_centers {
 }
 
 model report_parameters {
-  id            Int     @id(map: "PK__report_p__3213E83F4128ACA6") @default(autoincrement())
+  id            Int     @id(map: "PK__report_p__3213E83F3B3EF2D4") @default(autoincrement())
   name          String  @db.VarChar(500)
   label         String  @db.VarChar(500)
   type          String  @db.VarChar(50)
   placeholder   String? @db.Text
   report_id     Int
   value_type    String  @db.VarChar(50)
-  values        String  @db.Text
+  values        String  @db.VarChar(500)
   parent_id     Int
   default_value String? @db.VarChar(500)
+}
+
+model districts {
+  id         Int       @id(map: "PK__district__3213E83FF76C628B") @default(autoincrement())
+  region     Int
+  name       String    @db.VarChar(500)
+  status     String    @db.VarChar(10)
+  created_at DateTime? @db.DateTime
+  updated_at DateTime? @db.DateTime
 }

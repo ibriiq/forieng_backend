@@ -86,7 +86,18 @@ const login = async (req, res) => {
 
 
 const userInfo = async (req, res) => {
-  return res.status(200).json({ user: req.user });
+  let user = req.user;
+  console.log(user.id)
+  const permissions = await prisma.$queryRaw`
+    SELECT permissions.name as permission_name FROM user_has_roles
+    INNER JOIN role_has_permissons ON user_has_roles.role_id = role_has_permissons.role_id
+    INNER JOIN permissions ON role_has_permissons.permission_id = permissions.id
+      WHERE user_id = ${parseInt(user.id)}
+  `;
+  // user.permissions = permissions.map(permission => permission.permission_name);
+  user.permissions = permissions.map(permission => permission.permission_name).filter(permission => permission !== null);
+  console.log("user.permissions", user.permissions);
+  return res.status(200).json({ user: user });
 };
 
 const logout = async (req, res) => {
@@ -100,6 +111,30 @@ const logout = async (req, res) => {
     return res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     console.error("Logout error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+export const getPermissions = async (req, res) => {
+  try {
+    const permissions = await prisma.permissions.findMany();
+    let processedPermissions = [];
+    for (const permission of permissions) {
+      processedPermissions[permission.group][permission.module] = {
+        "title": permission.title,
+        "id": permission.id,
+        "group": permission.group,
+        "module": permission.module,
+        "created_by": permission.created_by,
+        "created_at": permission.created_at,
+        "updated_at": permission.updated_at,
+      };
+    }
+    console.log("processedPermissions", processedPermissions);
+    return res.status(200).json(processedPermissions);
+  } catch (error) {
+    console.error("Error fetching permissions:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
