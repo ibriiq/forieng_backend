@@ -16,64 +16,58 @@ model User {
   created_at DateTime? @db.DateTime
   updated_at DateTime? @db.DateTime
   phone      String?   @db.VarChar(12)
-  department Int?      @default(0, map: "DF__users__departmen__5BE2A6F2")
-  region     Int?      @default(0, map: "DF__users__region__5CD6CB2B")
+  department Int?      @default(0, map: "DF__users__departmen__70DDC3D8")
+  region     Int?      @default(0, map: "DF__users__region__71D1E811")
   status     String?   @db.VarChar(10)
 
   @@map("users")
 }
 
 model Session {
-  id           Int       @id(map: "PK__sessions__3213E83F883A8454") @default(autoincrement())
-  token        String    @unique(map: "UQ__sessions__CA90DA7A955476F2") @db.NVarChar(255)
+  id           Int       @id(map: "PK__sessions__3213E83F8B9067DD") @default(autoincrement())
+  token        String    @unique(map: "UQ__sessions__CA90DA7A155C926F") @db.NVarChar(255)
   user_id      Int
   expires_at   DateTime
-  created_at   DateTime? @default(now(), map: "DF__sessions__create__5070F446")
-  updated_at   DateTime? @default(now(), map: "DF__sessions__update__5165187F")
-  last_used_at DateTime? @default(now(), map: "DF__sessions__last_u__52593CB8")
+  created_at   DateTime? @default(now(), map: "DF__sessions__create__6754599E")
+  updated_at   DateTime? @default(now(), map: "DF__sessions__update__68487DD7")
+  last_used_at DateTime? @default(now(), map: "DF__sessions__last_u__693CA210")
 
-  @@index([expires_at], map: "idx_expires_at")
-  @@index([token], map: "idx_token")
-  @@index([user_id], map: "idx_user_id")
   @@map("sessions")
 }
 
 model regions {
-  id         Int       @id(map: "PK__regions__3213E83F4AE106F9") @default(autoincrement())
+  id         Int       @id(map: "PK__regions__3213E83FCFE1D423") @default(autoincrement())
   name       String    @db.VarChar(250)
   label      String    @db.VarChar(250)
   status     String    @db.VarChar(50)
   created_by Int
-  created_at DateTime? @default(now(), map: "DF__regions__created__5535A963") @db.DateTime
+  created_at DateTime? @default(now(), map: "DF__regions__created__656C112C") @db.DateTime
   updated_at DateTime? @db.DateTime
 }
 
 model Setting {
-  id            Int       @id(map: "PK__settings__3213E83FADBA6169") @default(autoincrement())
+  id            Int       @id(map: "PK__settings__3213E83F3013F7F0") @default(autoincrement())
   name          String    @db.VarChar(250)
   label         String    @db.VarChar(250)
   status        String    @db.VarChar(50)
   dropdown_type String    @db.VarChar(50)
   created_by    Int
-  created_at    DateTime? @default(now(), map: "DF__settings__create__5812160E") @db.DateTime
+  created_at    DateTime? @default(now(), map: "DF__settings__create__6A30C649") @db.DateTime
   updated_at    DateTime? @db.DateTime
 
   @@map("settings")
 }
 
 model permissions {
-  id         Int                      @id(map: "PK__permissi__3213E83FBEFE8042") @default(autoincrement())
+  id         Int                      @id(map: "PK__permissi__3213E83FC55E8A74") @default(autoincrement())
   name       String                   @db.VarChar(50)
   created_by Int
   created_at Unsupported("timestamp")
   updated_a  DateTime?                @db.DateTime
-  group      String?                  @db.VarChar(50)
-  module     String?                  @db.VarChar(50)
-  title      String?                  @db.VarChar(250)
 }
 
 model role_has_permissons {
-  id            Int                      @id(map: "PK__role_has__3213E83F36A44D58") @default(autoincrement())
+  id            Int                      @id(map: "PK__role_has__3213E83FD57CFA2B") @default(autoincrement())
   role_id       Int
   permission_id Int
   created_at    Unsupported("timestamp")
@@ -81,7 +75,7 @@ model role_has_permissons {
 }
 
 model roles {
-  id         Int                      @id(map: "PK__roles__3213E83FF603C99C") @default(autoincrement())
+  id         Int                      @id(map: "PK__roles__3213E83F058B8CAE") @default(autoincrement())
   name       String                   @db.VarChar(50)
   status     String                   @db.VarChar(50)
   created_by Int
@@ -92,7 +86,7 @@ model roles {
 }
 
 model UserHasRole {
-  id         Int                      @id(map: "PK__user_has__3213E83F959C8A7D") @default(autoincrement())
+  id         Int                      @id(map: "PK__user_has__3213E83F860771F9") @default(autoincrement())
   user_id    Int
   role_id    Int
   created_at Unsupported("timestamp")
@@ -102,7 +96,7 @@ model UserHasRole {
 }
 
 model foreigners {
-  id                       Int       @id(map: "PK__foreigne__3213E83F7810E674") @default(autoincrement())
+  id                       Int       @id(map: "PK__foreigne__3213E83F9EC3D0E7") @default(autoincrement())
   first_name               String    @db.VarChar(250)
   last_name                String    @db.VarChar(250)
   mother_name              String    @db.VarChar(500)
@@ -134,25 +128,24 @@ model foreigners {
   updated_at               DateTime? @db.DateTime
   registration_id          String?   @db.VarChar(500)
   unique_id                String?   @db.VarChar(150)
-  status                   String?   @default("Registered", map: "DF__foreigner__statu__756D6ECB") @db.VarChar(50)
+  status                   String?   @default("Registered", map: "DF__foreigner__statu__6477ECF3") @db.VarChar(50)
   region                   Int?
-  district                 Int?      @default(0, map: "DF__foreigner__distr__0880433F")
 }
 
 model sponsor_documents {
-  id           Int       @id(map: "PK__sponsor___3213E83F5E621E8E") @default(autoincrement())
+  id           Int       @id(map: "PK__sponsor___3213E83FA5FC6C6F") @default(autoincrement())
   sponsor_id   Int
   file_name    String    @db.NVarChar(255)
   file_path    String    @db.NVarChar(500)
   file_size_kb Int
   file_type    String    @db.NVarChar(50)
-  uploaded_at  DateTime? @default(dbgenerated("getutcdate()"), map: "DF__sponsor_d__uploa__1AD3FDA4")
+  uploaded_at  DateTime? @default(dbgenerated("getutcdate()"), map: "DF__sponsor_d__uploa__6B24EA82")
   type         String?   @db.VarChar(250)
   sponsors     sponsors  @relation(fields: [sponsor_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_sponsor_documents_sponsors")
 }
 
 model sponsors {
-  id                           Int                 @id(map: "PK__sponsors__3213E83F2AED748E") @default(autoincrement())
+  id                           Int                 @id(map: "PK__sponsors__3213E83FBCC82DB0") @default(autoincrement())
   sponsor_name                 String              @db.NVarChar(255)
   national_id_number           String              @db.NVarChar(100)
   sponsor_type                 String              @db.NVarChar(50)
@@ -161,49 +154,49 @@ model sponsors {
   emergency_contact_number     String              @db.NVarChar(50)
   complete_address             String              @db.NVarChar(Max)
   region                       String              @db.NVarChar(100)
-  maximum_sponsorship_capacity Int                 @default(5, map: "DF__sponsors__maximu__160F4887")
-  created_at                   DateTime?           @default(dbgenerated("getutcdate()"), map: "DF__sponsors__create__17036CC0")
-  updated_at                   DateTime?           @default(dbgenerated("getutcdate()"), map: "DF__sponsors__update__17F790F9")
+  maximum_sponsorship_capacity Int                 @default(5, map: "DF__sponsors__maximu__6C190EBB")
+  created_at                   DateTime?           @default(dbgenerated("getutcdate()"), map: "DF__sponsors__create__6D0D32F4")
+  updated_at                   DateTime?           @default(dbgenerated("getutcdate()"), map: "DF__sponsors__update__6E01572D")
   company_name                 String?             @db.VarChar(500)
   license_number               String?             @db.VarChar(500)
   license_type                 String?             @db.VarChar(500)
   license_ministry             String?             @db.VarChar(500)
-  status                       String              @default("active", map: "DF__sponsors__status__2739D489") @db.VarChar(50)
-  responsibility_score         Int                 @default(0, map: "DF__sponsors__respon__282DF8C2")
+  status                       String              @default("active", map: "DF__sponsors__status__6EF57B66") @db.VarChar(50)
+  responsibility_score         Int                 @default(0, map: "DF__sponsors__respon__6FE99F9F")
   sponsor_documents            sponsor_documents[]
 }
 
 model foreigner_documents {
-  id         Int    @id(map: "PK__foreigne__3213E83F5A629819") @default(autoincrement())
+  id         Int    @id(map: "PK__foreigne__3213E83F1E0DED5A") @default(autoincrement())
   foreign_id Int
   type_id    Int
   file_name  String @db.VarChar(2000)
 }
 
 model application_documents {
-  id             Int    @id(map: "PK__applicat__3213E83F8F59B6CC") @default(autoincrement())
+  id             Int    @id(map: "PK__applicat__3213E83F004C1A46") @default(autoincrement())
   application_id Int
   file_name      String @db.VarChar(500)
 }
 
 model applications {
-  id               Int       @id(map: "PK__applicat__3213E83F82C2BC76") @default(autoincrement())
+  id               Int       @id(map: "PK__applicat__3213E83F3DD68DC4") @default(autoincrement())
   foreign_id       Int
   application_type String    @db.VarChar(50)
   document_type    String    @db.VarChar(50)
   expiry_date      DateTime  @db.Date
   note             String?   @db.VarChar(5000)
   created_by       Int
-  status           String?   @default("Pending", map: "DF__applicati__statu__3587F3E0") @db.VarChar(50)
+  status           String?   @default("Pending", map: "DF__applicati__statu__619B8048") @db.VarChar(50)
   created_at       DateTime? @db.DateTime
   updated_at       DateTime? @db.DateTime
-  is_paid          Int?      @default(0, map: "DF__applicati__is_pa__3A4CA8FD")
-  amount           String    @default("0", map: "DF__applicati__amoun__3D2915A8") @db.VarChar(1000)
+  is_paid          Int?      @default(0, map: "DF__applicati__is_pa__628FA481")
+  amount           String    @default("0", map: "DF__applicati__amoun__6383C8BA") @db.VarChar(1000)
   application_id   String?   @db.VarChar(250)
 }
 
 model application_statuses {
-  id             Int       @id(map: "PK__applicat__3213E83FCB3C2464") @default(autoincrement())
+  id             Int       @id(map: "PK__applicat__3213E83F79ADAE3F") @default(autoincrement())
   application_id Int
   status         String    @db.VarChar(50)
   created_by     Int
@@ -212,7 +205,7 @@ model application_statuses {
 }
 
 model payments {
-  id              Int       @id(map: "PK__payments__3213E83FB030AB1E") @default(autoincrement())
+  id              Int       @id(map: "PK__payments__3213E83F8F80F7DB") @default(autoincrement())
   application_id  Int
   receipt_number  String    @db.VarChar(250)
   payment_date    DateTime? @db.Date
@@ -230,7 +223,7 @@ model payments {
 }
 
 model expense_categories {
-  id          Int       @id(map: "PK__expense___3213E83FBC6ECDC0") @default(autoincrement())
+  id          Int       @id(map: "PK__expense___3213E83FAE9FDB4D") @default(autoincrement())
   name        String    @db.VarChar(500)
   description String?   @db.VarChar(1000)
   status      String    @db.VarChar(50)
@@ -238,7 +231,7 @@ model expense_categories {
 }
 
 model expense_subcategories {
-  id                  Int       @id(map: "PK__expense___3213E83F4EEE4284") @default(autoincrement())
+  id                  Int       @id(map: "PK__expense___3213E83F1FC07DBE") @default(autoincrement())
   expense_category_id Int
   name                String    @db.VarChar(500)
   status              String    @db.VarChar(50)
@@ -247,7 +240,7 @@ model expense_subcategories {
 }
 
 model withdrawals {
-  id                     Int       @id(map: "PK__withdraw__3213E83F48869820") @default(autoincrement())
+  id                     Int       @id(map: "PK__withdraw__3213E83FC0418A91") @default(autoincrement())
   amount                 Float     @db.Money
   priority               String    @db.VarChar(250)
   expense_category       Int
@@ -259,12 +252,12 @@ model withdrawals {
   created_by             Int
   created_at             DateTime? @db.DateTime
   updated_at             DateTime? @db.DateTime
-  status                 String?   @default("pending", map: "DF__withdrawa__statu__58D1301D") @db.VarChar(50)
+  status                 String?   @default("pending", map: "DF__withdrawa__statu__72C60C4A") @db.VarChar(50)
   reference              String?   @db.VarChar(250)
 }
 
 model document_types {
-  id         Int       @id(map: "PK__document__3213E83F514C38AF") @default(autoincrement())
+  id         Int       @id(map: "PK__document__3213E83F5221FD94") @default(autoincrement())
   name       String    @db.VarChar(50)
   price      Float     @db.Money
   validity   Int
@@ -273,7 +266,7 @@ model document_types {
 }
 
 model country_of_origins {
-  id             Int       @id(map: "PK__country___3213E83F95B297F6") @default(autoincrement())
+  id             Int       @id(map: "PK__country___3213E83FD8AD64B7") @default(autoincrement())
   name           String    @db.VarChar(500)
   nationality_id Int
   description    String?   @db.VarChar(500)
@@ -283,7 +276,7 @@ model country_of_origins {
 }
 
 model report_centers {
-  id          Int     @id(map: "PK__report_c__3213E83F62DB182B") @default(autoincrement())
+  id          Int     @id(map: "PK__report_c__3213E83F7B4380AD") @default(autoincrement())
   name        String  @db.VarChar(500)
   description String  @db.VarChar(500)
   permission  String? @db.VarChar(500)
@@ -291,7 +284,7 @@ model report_centers {
 }
 
 model report_parameters {
-  id            Int     @id(map: "PK__report_p__3213E83F3B3EF2D4") @default(autoincrement())
+  id            Int     @id(map: "PK__report_p__3213E83F8B3ABBE2") @default(autoincrement())
   name          String  @db.VarChar(500)
   label         String  @db.VarChar(500)
   type          String  @db.VarChar(50)
@@ -301,13 +294,4 @@ model report_parameters {
   values        String  @db.VarChar(500)
   parent_id     Int
   default_value String? @db.VarChar(500)
-}
-
-model districts {
-  id         Int       @id(map: "PK__district__3213E83FF76C628B") @default(autoincrement())
-  region     Int
-  name       String    @db.VarChar(500)
-  status     String    @db.VarChar(10)
-  created_at DateTime? @db.DateTime
-  updated_at DateTime? @db.DateTime
 }
