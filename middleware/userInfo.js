@@ -1,6 +1,6 @@
 import prisma from '../lib/prisma.js';
 
-const excludedPaths = new Set(['/api/login', '/api/logout']);
+const excludedPaths = new Set(['/api/login', '/api/logout','/api/OTPVerification']);
 
 const userInfo = async (req, res, next) => {
 
@@ -51,7 +51,8 @@ const userInfo = async (req, res, next) => {
       id: user.id,
       name: user.name,
       email: user.email,
-      role_id: role_id.map(role => role.role_id)
+      role_id: role_id.map(role => role.role_id),
+      "last_otp": user.last_otp,
     };
 
     req.session = session;

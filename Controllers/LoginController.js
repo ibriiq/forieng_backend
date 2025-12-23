@@ -1,8 +1,10 @@
 import crypto from "crypto";
+import { timingSafeEqual } from 'crypto';
 import prisma from "../lib/prisma.js";
+import { SendSms } from "../lib/Helper.js";
+
 
 const login = async (req, res) => {
-  console.log(req.body);
 
   const { email, password } = req.body || {};
 
@@ -24,26 +26,102 @@ const login = async (req, res) => {
   }
 
   const user = await prisma.User.findFirst({
-    where: { email: trimmedEmail, password: passwordStr },
+    where: { email: trimmedEmail },
   });
   if (!user) {
+
+
+
+
     return res.status(401).json({ error: "Invalid credentials." });
   }
 
-  // const activeSession = await prisma.Session.findFirst({
-  //   where: { user_id: user.id, last_used_at: { lte: new Date() } },
-  // });
-  // if (activeSession) {
-  //   return res
-  //     .status(401)
-  //     .json({ error: "User already is already logged in." });
+  // Verify password using crypto (SHA-256 hash)
+  if (!user.password) {
+    return res.status(401).json({ error: "Invalid credentials." });
+  }
+
+  const hashedPassword = crypto.createHash("sha256").update(passwordStr).digest("hex");
+
+  // Use timing-safe comparison to prevent timing attacks
+  try {
+    const storedHashBuffer = Buffer.from(user.password, "hex");
+    const providedHashBuffer = Buffer.from(hashedPassword, "hex");
+
+    // Check if buffers have the same length before comparing
+    if (storedHashBuffer.length !== providedHashBuffer.length) {
+      return res.status(401).json({ error: "Invalid credentials." });
+    }
+
+    if (!timingSafeEqual(storedHashBuffer, providedHashBuffer)) {
+      return res.status(401).json({ error: "Invalid credentials." });
+    }
+  } catch (error) {
+    // If password format is invalid, return error
+    return res.status(401).json({ error: "Invalid credentials." });
+  }
+
+
+
+  let otp = Math.floor(100000 + Math.random() * 900000);
+
+  // SendSms(user.phone, `Your OTP is ${otp}`);
+
+  await prisma.User.update({
+    where: { id: user.id },
+    data: {
+      last_otp: otp.toString(),
+      otp_expires_at: new Date(Date.now() + 10 * 60 * 1000),
+    },
+  });
+
+
+  res.cookie("temporary_user_id", user.id,{
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 5 * 60 * 1000, // 5 minutes
+    path: "/",
+  });
+
+
+  return res.status(200).json({ message: "Successfully Sent OTP to your phone", user: {
+    // id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role_id: user.role_id
+  }});
+
+
+  // } catch (error) {
+  //   return res.status(500).json({ error: error.message });
   // }
+};
 
-  // try {
 
-  // NOTE: Password verification is not implemented as no hashed password is in schema.
-  // Add proper password hashing and verification as needed.
+export const verifyOtp = async (req, res) => {
+  const { otp} = req.body;
+  const temporary_user_id = req.cookies.temporary_user_id;
+  if (!temporary_user_id) {
+    return res.status(401).json({ error: "Invalid temporary user id." });
+  }
+  const user = await prisma.User.findUnique({
+    where: { id: parseInt(temporary_user_id) },
+  });
+  // console.log("user", user);
+  console.log("otp", otp);
+  console.log("last_otp", user.last_otp);
+  console.log("otp", otp.toString());
+  if (user.last_otp !== otp) {
+    return res.status(401).json({ error: "Invalid OTP." });
+  }
+  if (user.otp_expires_at < new Date()) {
+    return res.status(401).json({ error: "OTP expired." });
+  }
 
+
+  
   // Generate opaque bearer token and store in DB with 5-minute expiry
   const token = crypto.randomBytes(32).toString("hex");
   const expiresInSeconds = 60 * 60;
@@ -59,7 +137,7 @@ const login = async (req, res) => {
     },
   });
 
-  
+
   res.cookie("authToken", token, {
     httpOnly: true, // Crucial for security against XSS
     secure: process.env.NODE_ENV === "production", // Use true in production with HTTPS
@@ -68,20 +146,18 @@ const login = async (req, res) => {
     path: "/", // Accessible on all routes
     // domain: '.yourdomain.com' // Optional: specify domain if needed
   });
-  
+
   console.log("res", process.env.NODE_ENV);
   console.log("res.cookie", res.cookie);
   console.log("res.token", token);
 
-  return res.json({
-    // token_type: "Bearer",
-    // access_token: token,
-    expires_in: expiresInSeconds,
-    user: user,
-  });
-  // } catch (error) {
-  //   return res.status(500).json({ error: error.message });
-  // }
+
+  return res.status(200).json({ user: {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone
+  }});
 };
 
 

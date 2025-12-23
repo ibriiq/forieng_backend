@@ -4,9 +4,9 @@ import path from 'path';
 import { randomUUID } from 'crypto';
 import multer from 'multer';
 import mime from 'mime-types';
-import { login, logout, userInfo, getPermissions } from './Controllers/LoginController.js';
+import { login, logout, userInfo, getPermissions, verifyOtp } from './Controllers/LoginController.js';
 import { index, create, getSingle, destroy } from './Controllers/RegionController.js';
-import { create as createUser, getRoles, index as indexUsers } from './Controllers/UserController.js';
+import { create as createUser, getRoles, index as indexUsers, destroy as destroyUser } from './Controllers/UserController.js';
 import {
   create as createForeigner,
   index as indexForeigner, search,
@@ -135,6 +135,7 @@ const upload = multer({ storage });
 
 
 router.post('/login', login);
+router.post('/OTPVerification', verifyOtp);
 router.post('/getPermissions', getPermissions);
 router.post('/logout', logout);
 router.post('/user', userInfo);
@@ -147,6 +148,7 @@ router.post('/settings/destroy', destroy);
 
 // User routes begin here
 router.post('/users/create', createUser);
+router.post('/users/destroy', destroyUser);
 router.post('/users/roles', getRoles);
 router.post('/users', indexUsers);
 
